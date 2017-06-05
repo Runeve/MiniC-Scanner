@@ -10,10 +10,10 @@
 
 int superLetter(char ch);//지정어나 키워드 판단 함수 (영문자이거나 _ 면 1, 아니면 0을 반환)
 int superLetterOrDigit(char ch);//숫자이거나 면 1, 아니면 0을 반환
-double getNumber(char firstCharacter);
-int hexValue(char ch);
-void lexicalError(int n);
-bool isDigitOrPoint(char c);
+double getNumber(char firstCharacter);//숫자 리터럴의 값을 숫자로 변환해주는 함수
+int hexValue(char ch);//16진수 문자를  decimal값으로 변환
+void lexicalError(int n);//에러 처리 함수
+bool isDigitOrPoint(char c);//숫자나 숫자표현에 사용된 문자인지 판단
 
 #define NO_KEYWORD 16
 #define ID_LENGTH 12
@@ -133,11 +133,18 @@ struct tokenType scanner()
 			char temp[ID_LENGTH];
 			double tmp = getNumber(ch);
 			strcpy(token.str, temp_str);
-			if(point_check)
+			if(tmp >= 99999999999)//너무 숫자가 크면 그냥 출력
+				strcpy(token.value, temp_str);
+			else if (point_check)
+			{
 				sprintf(temp, "%lf", tmp);
+				strcpy(token.value, temp);
+			}
 			else
+			{
 				sprintf(temp, "%d", (int)tmp);
-			strcpy(token.value, temp);
+				strcpy(token.value, temp);
+			}
 			memset(temp_str, '\0', sizeof(temp_str));
 		}
 		else switch (ch) {  // special character
@@ -514,10 +521,12 @@ double getNumber(char firstCharacter)
 		col_num++;
 		if ((ch == 'X') || (ch == 'x')) {		// hexa decimal
 			while ((value = hexValue(ch = fgetc(sourceFile))) != -1)
+			{
 				if (ch != '\n' && isDigitOrPoint(ch))
 					temp_str[i++] = ch;
 				col_num++;
 				num = 16 * num + value;
+			}
 		}
 		else if ((ch >= '0') && (ch <= '7'))	// octal
 			do {
@@ -554,7 +563,8 @@ double getNumber(char firstCharacter)
 					}
 					else
 					{
-						num += (double)(ch - '0') *(1.0 / (double)pow(10, (point_count++)));
+						if (ch >= '0' && ch <= '9')
+							num += (double)(ch - '0') *(1.0 / (double)pow(10, (point_count++)));
 						ch = fgetc(sourceFile);
 						col_num++;
 						if (ch != '\n' && isDigitOrPoint(ch))
@@ -594,7 +604,8 @@ double getNumber(char firstCharacter)
 					}
 					else
 					{
-						num += (double)(ch - '0') *(1.0 / (double)pow(10, (point_count++)));
+						if (ch >= '0' && ch <= '9')
+							num += (double)(ch - '0') *(1.0 / (double)pow(10, (point_count++)));
 						ch = fgetc(sourceFile);
 						col_num++;
 						if (ch != '\n' && isDigitOrPoint(ch))
@@ -633,7 +644,7 @@ int hexValue(char ch)
 
 bool isDigitOrPoint(char c)
 {
-	if ((c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E')
+	if ((c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == 'x' || c == 'X' || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
 		return true;
 	else
 		return false;
